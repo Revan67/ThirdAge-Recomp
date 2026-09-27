@@ -82,8 +82,8 @@ extern ptrdiff_t g_xbox_mem_offset;
  * Run: py -3 -m tools.xbe_parser game/default.xbe
  */
 #define YOUR_GAME_ENTRY_POINT   0x00035326  /* XBE entry point VA */
-#define YOUR_GAME_XBE_PATH      "dump\\default.xbe"
-#define YOUR_GAME_DIR            "dump"
+#define YOUR_GAME_XBE_PATH      "dump\\game_files\\default.xbe"
+#define YOUR_GAME_DIR            "dump\\game_files"
 
 /* ── Forward declarations ──────────────────────────────────── */
 
@@ -289,7 +289,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     /* Step 1: Load XBE */
     if (!load_xbe(YOUR_GAME_XBE_PATH, &xbe_data, &xbe_size)) {
         MessageBoxA(NULL, "Failed to load default.xbe.\n"
-                    "Place the game files in the 'game' subdirectory.",
+                    "Extract the game files under 'dump\\game_files'.",
                     "Recomp", MB_ICONERROR);
         return 1;
     }

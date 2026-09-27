@@ -9,6 +9,7 @@ extracted/
 # Generated recompilation and analysis output
 build/
 generated/
+src/recomp/
 analysis/generated/
 tools/disasm/output/
 tools/abi_analysis/output/
@@ -23,4 +24,5 @@ __pycache__/
 .idea/
 Thumbs.db
 Desktop.ini
+*.log
 
