@@ -27,3 +27,14 @@ Desktop.ini
 *.log
 third_age_recomp.exe
 
+# Local secrets, signing material, and user-specific build configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+*.user
+CMakeUserPresets.json
+
