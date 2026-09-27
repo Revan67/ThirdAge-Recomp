@@ -81,3 +81,24 @@ default for this project. A normal launch now creates the 640x480 `Xbox Recomp
 framebuffer/surface discovery or unsupported push-buffer methods rather than
 window creation or title startup.
 
+## First vblank delivery
+
+The initial push buffer clears one surface to black, selects a 640x480 surface
+at physical `0x00230000`, and stops with DMA PUT and GET both at `0x1B44`.
+The title installs its NV2A interrupt on vector 3 and expects PCRTC vblank
+delivery after that first flip. `RECOMP_VBLANK` is therefore enabled by
+default for this project alongside push-buffer execution and presentation.
+
+The runtime now raises PCRTC and PMC status before calling the ISR. Tracing
+confirms that the title first declines an early interrupt and then claims
+subsequent vblanks, queuing D3D's DPC object at `0x0023813C` with routine
+`0x00231A30`. Deferred-call draining was also corrected to process a snapshot
+of the queue: a DPC queued by another DPC runs on the next scheduler pass,
+instead of allowing self-requeueing work to monopolize the timer thread.
+
+This removes the missing-frame-clock failure but does not yet produce a second
+push buffer. The verified boundary remains DMA `0x1B44`, with one black clear,
+zero draws, and no unresolved indirect call. The next analysis target is the
+guest D3D synchronization path around `0x0022B7E0`/`0x0022B9B0`; Ghidra is
+available at `C:\utilities` for that pass.
+

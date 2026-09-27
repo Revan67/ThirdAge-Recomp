@@ -291,14 +291,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     }
 
     /* This title talks to its statically linked Xbox D3D library and submits
-     * NV2A push buffers directly.  The generic runtime keeps push-buffer
-     * execution and framebuffer presentation opt-in, but without both this
-     * project is intentionally headless.  Respect explicit caller settings
-     * while making a normal double-click produce a presentation window. */
+     * NV2A push buffers directly.  It also waits on its installed PCRTC
+     * interrupt handler after the initial clear, so vblank delivery is part
+     * of normal execution.  Respect explicit caller settings while making a
+     * normal double-click produce a live presentation window. */
     if (!getenv("RECOMP_PB_EXEC"))
         _putenv_s("RECOMP_PB_EXEC", "1");
     if (!getenv("RECOMP_FB_WINDOW"))
         _putenv_s("RECOMP_FB_WINDOW", "1");
+    if (!getenv("RECOMP_VBLANK"))
+        _putenv_s("RECOMP_VBLANK", "1");
 
     /* Unbuffered output for immediate visibility during debugging */
     setvbuf(stdout, NULL, _IONBF, 0);
