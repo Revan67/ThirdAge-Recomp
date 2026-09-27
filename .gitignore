@@ -1,0 +1,26 @@
+# User-supplied game dumps and extracted proprietary data
+*.iso
+*.xiso
+*.xbe
+game_files/
+dump/
+extracted/
+
+# Generated recompilation and analysis output
+build/
+generated/
+analysis/generated/
+tools/disasm/output/
+tools/abi_analysis/output/
+
+# Local tooling and editor state
+.venv/
+.tools/
+__pycache__/
+*.py[cod]
+.vs/
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
+
