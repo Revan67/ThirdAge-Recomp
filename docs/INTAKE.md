@@ -66,3 +66,18 @@ has a dispatch entry for `0x0007E434` and again reaches title filesystem and
 profile initialization. The next task is to capture the earliest remaining
 valid indirect target before later bad state produces noisy, code-like values.
 
+## First graphics bring-up
+
+Direct `Partition1\\TDATA` and `Partition1\\UDATA` paths now route to the
+writable title/user save trees rather than the extracted disc directory. The
+cache formatter's volume lock, unlock, and dismount controls complete as safe
+no-ops for host backing files. With those fixes the title advances through
+cache setup into its statically linked D3D code, submits an NV2A push buffer,
+and executes more than 3,200 indirect calls without an unresolved target.
+
+Push-buffer execution and the diagnostic framebuffer presenter are enabled by
+default for this project. A normal launch now creates the 640x480 `Xbox Recomp
+- Framebuffer` window. It is currently black, so the active blocker is
+framebuffer/surface discovery or unsupported push-buffer methods rather than
+window creation or title startup.
+

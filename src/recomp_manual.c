@@ -113,6 +113,23 @@ recomp_func_t recomp_lookup_manual(uint32_t xbox_va)
  */
 void recomp_icall_fail_log(uint32_t va)
 {
+    /* Preserve the first failures in a small machine-readable log. Console
+     * capture from a WIN32-subsystem executable is host-dependent, and once a
+     * missed call corrupts guest state the later targets become mostly noise.
+     * Keeping only the first 32 events gives seed_from_log the useful prefix
+     * without turning a runaway title into an unbounded file writer. */
+    static unsigned saved_failures;
+    if (saved_failures < 32) {
+        FILE *f = fopen("icall_early.log", saved_failures ? "a" : "w");
+        if (f) {
+            fprintf(f, "[ICALL] Failed to resolve VA 0x%08X "
+                       "(total calls: %llu)\n",
+                    va, (unsigned long long)g_icall_count);
+            fclose(f);
+        }
+        saved_failures++;
+    }
+
     fprintf(stderr, "[ICALL] Failed to resolve VA 0x%08X (total calls: %llu)\n",
             va, (unsigned long long)g_icall_count);
 
