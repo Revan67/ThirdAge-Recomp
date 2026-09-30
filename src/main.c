@@ -301,6 +301,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         _putenv_s("RECOMP_FB_WINDOW", "1");
     if (!getenv("RECOMP_VBLANK"))
         _putenv_s("RECOMP_VBLANK", "1");
+    /* The linked DirectSound runtime submits its DSP command block through
+     * its allocated command block and waits on the word at 0x804D0810.  The current
+     * passthrough DSP has no program to consume it, so acknowledge that
+     * observed doorbell once per APU frame. */
+    if (!getenv("RECOMP_AC97_READY"))
+        _putenv_s("RECOMP_AC97_READY", "1");
+    if (!getenv("RECOMP_APU_DSP_ACK"))
+        _putenv_s("RECOMP_APU_DSP_ACK", "0x804D0810");
 
     /* Unbuffered output for immediate visibility during debugging */
     setvbuf(stdout, NULL, _IONBF, 0);
@@ -338,6 +346,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     g_xbox_mem_offset = xbox_GetMemoryOffset();
     printf("Xbox memory mapped. Offset: 0x%llX\n", (unsigned long long)g_xbox_mem_offset);
+
+    /* Xbox D3D keeps a five-bit PGRAPH cache reference in a GPU-owned word
+     * reached through the device at 0x00238938. The title deliberately poisons
+     * that word after setup and waits for NV2A to replace it with the reference
+     * exposed in PATT_COLOR0. */
+    xbox_Nv2aMirrorPatternReference(0x00238938u, 0x30u);
 
     /* Open the diagnostic presentation window immediately.  The generic
      * push-buffer executor also starts it after recognizing a color surface,

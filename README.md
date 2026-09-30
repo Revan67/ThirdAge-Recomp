@@ -19,15 +19,17 @@ copyrighted game assets. You must supply files from a legally owned copy.
 
 The project is not yet playable.
 
-- Translates 14,086 discovered guest functions into native C.
+- Translates all 14,089 currently discovered guest functions into native C.
 - Loads all 13 XBE sections and resolves all 117 imported kernel symbols.
-- Reaches cache, profile, and statically linked Xbox D3D initialization.
+- Initializes cache, profile, audio, and the statically linked Xbox D3D code.
 - Creates a 640x480 diagnostic framebuffer window.
-- Executes the initial NV2A push buffer and delivers PCRTC vblank interrupts.
-- Currently stops after its first black clear/flip at DMA position `0x1B44`.
+- Executes NV2A push buffers, delivers PCRTC vblank interrupts, and renders the
+  One Ring loading spinner through the software raster path.
+- Streams `GlobScen.scx` and subsequent cached scene data without entering the
+  title's fatal disc-error loop.
 
-The next investigation is the D3D synchronization path around guest addresses
-`0x0022B7E0` and `0x0022B9B0`.
+The current frontier is broader NV2A method and shader coverage needed to turn
+the successfully loaded scene data into a faithful frame.
 
 ## Repository layout
 
