@@ -102,3 +102,25 @@ zero draws, and no unresolved indirect call. The next analysis target is the
 guest D3D synchronization path around `0x0022B7E0`/`0x0022B9B0`; Ghidra is
 available at `C:\utilities` for that pass.
 
+## Scene-streaming boundary
+
+Later bring-up work advanced beyond that first-buffer boundary. The title now
+renders its One Ring loading overlay, opens `GlobScen.scx`, then opens
+`e98c/e98c03.scx` and its companion `.sas`. File tracing confirms successful,
+ordered 64 KiB reads from the chapter `.scx`; the observed run advanced beyond
+offset `0xC0000` without an I/O failure or unresolved indirect call.
+
+No chapter geometry is submitted during this interval. The NV2A USER PUT and
+GET pointers remain equal, so the current blocker is not a full or stalled GPU
+queue. The loader worker is sleeping in its normal event wait between chunks,
+while the main thread continues the loading/update path. The immediate target
+is therefore the producer/consumer handoff that schedules subsequent scene
+chunks and eventually changes game state, not additional shader translation.
+
+`RECOMP_GUEST_SAMPLE=<delay>,<duration>` enables the runtime's non-terminating
+guest-function sampler. It samples the main guest thread and registered worker
+threads, reports the hottest guest addresses after the requested wall-clock
+window, and can be combined with `RECOMP_WATCHDOG_SECS` for a terminating stack
+snapshot. This avoids mistaking a worker blocked in a host wait for a CPU-bound
+guest loop.
+

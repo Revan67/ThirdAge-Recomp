@@ -25,6 +25,8 @@ __pycache__/
 Thumbs.db
 Desktop.ini
 *.log
+*.pid
+sceneprobe*
 third_age_recomp.exe
 
 # Local secrets, signing material, and user-specific build configuration

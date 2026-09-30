@@ -25,11 +25,14 @@ The project is not yet playable.
 - Creates a 640x480 diagnostic framebuffer window.
 - Executes NV2A push buffers, delivers PCRTC vblank interrupts, and renders the
   One Ring loading spinner through the software raster path.
-- Streams `GlobScen.scx` and subsequent cached scene data without entering the
-  title's fatal disc-error loop.
+- Streams `GlobScen.scx` and the opening chunks of `e98c03.scx` without
+  entering the title's fatal disc-error loop.
 
-The current frontier is broader NV2A method and shader coverage needed to turn
-the successfully loaded scene data into a faithful frame.
+The current frontier is the CPU-side scene-streaming handoff. The NV2A queue is
+caught up and the loading overlay renders correctly, but the title has not yet
+submitted scene geometry after opening the first chapter scene. Once that
+handoff completes, broader NV2A method and shader coverage will become the next
+rendering frontier.
 
 ## Repository layout
 
