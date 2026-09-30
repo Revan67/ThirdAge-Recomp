@@ -143,8 +143,16 @@ zero-based scene sections (`0/3`, `1/3`, and `2/3`) through the title's
 four-slot handoff ring. At the pause the final section reports complete, the
 ring and parsed-object queue are drained, and there are no failed reads. The
 scene package has therefore finished streaming and parsing. The next bring-up
-target is post-load scene activation and render submission, not file I/O or an
-additional scene packet.
+target was post-load scene activation and render submission, not file I/O or
+an additional scene packet.
+
+The activation trace subsequently confirmed real renderer output: 200 textured
+batches, 400 rasterised triangles, and roughly 26.7 million pixel writes. The
+remaining black framebuffer was a scanout-selection bug. The title selects and
+clears its next backbuffer before `FLIP_STALL`, while the runtime window was
+following that newly cleared surface. The NV2A executor now switches the
+framebuffer window to `drawn_offset` at the flip, matching the completed buffer
+hardware would scan out.
 
 `RECOMP_GUEST_SAMPLE=<delay>,<duration>` enables the runtime's non-terminating
 guest-function sampler. It samples the main guest thread and registered worker
