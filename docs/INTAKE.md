@@ -117,6 +117,15 @@ while the main thread continues the loading/update path. The immediate target
 is therefore the producer/consumer handoff that schedules subsequent scene
 chunks and eventually changes game state, not additional shader translation.
 
+The stream handoff also exposed two runtime lifetime gaps which are now fixed.
+XDK libraries can initialize embedded `KEVENT` objects directly rather than
+calling the exported kernel initializer, so the bridge now creates a matching
+host event on first use. Closed guest handles retained by an Xbox file object
+are no longer expired on a wall-clock timer, and sharing-conflict cleanup is
+limited to retired handles for the path being reopened. A verification run
+read the chapter stream continuously through offset `0x180000` without the
+title's false dirty-or-damaged-disc error.
+
 `RECOMP_GUEST_SAMPLE=<delay>,<duration>` enables the runtime's non-terminating
 guest-function sampler. It samples the main guest thread and registered worker
 threads, reports the hottest guest addresses after the requested wall-clock
