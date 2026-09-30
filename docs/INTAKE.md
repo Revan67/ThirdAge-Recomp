@@ -154,6 +154,16 @@ following that newly cleared surface. The NV2A executor now switches the
 framebuffer window to `drawn_offset` at the flip, matching the completed buffer
 hardware would scan out.
 
+Some titles reuse that memory before the framebuffer window's 60 Hz polling
+thread observes it, so the presenter now also latches a converted copy
+synchronously whenever a raster batch completes. `RECOMP_FB_TRACE=1` reports
+the latched address and non-black pixel count. For Third Age this exposed the
+first verified visible game output: a textured dark-red circular loading
+indicator in the lower-right corner (about 1,400 non-black pixels). Scanout,
+2D rasterisation, and texture sampling are therefore working. Bring-up now
+continues at the game-state transition which should replace that loading frame
+with the full scene.
+
 `RECOMP_GUEST_SAMPLE=<delay>,<duration>` enables the runtime's non-terminating
 guest-function sampler. It samples the main guest thread and registered worker
 threads, reports the hottest guest addresses after the requested wall-clock
