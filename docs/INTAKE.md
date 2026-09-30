@@ -126,6 +126,15 @@ limited to retired handles for the path being reopened. A verification run
 read the chapter stream continuously through offset `0x180000` without the
 title's false dirty-or-damaged-disc error.
 
+A subsequent long run exposed a second host-concurrency mismatch in the
+title's async completion queue. The original append routine assumes Xbox's
+single guest CPU; native worker threads could enqueue the same node twice and
+form a one-node cycle, trapping the main thread in an unbounded list walk at
+`0x000E4540`. That routine now has a title-specific manual implementation
+which rejects duplicate nodes and repairs the observed self-cycle. Regenerated
+direct call sites route through the override. The infinite walk disappeared
+and verified chapter reads advanced through offset `0x1B0000`.
+
 `RECOMP_GUEST_SAMPLE=<delay>,<duration>` enables the runtime's non-terminating
 guest-function sampler. It samples the main guest thread and registered worker
 threads, reports the hottest guest addresses after the requested wall-clock

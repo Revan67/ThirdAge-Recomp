@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include "gen/recomp_types.h"
 
 /* ── ICALL trace ring buffer ───────────────────────────────── */
 
@@ -42,6 +43,60 @@ extern volatile uint32_t g_icall_trace_idx;
 extern volatile uint64_t g_icall_count;
 
 typedef void (*recomp_func_t)(void);
+
+/* The title's async completion list assumes the Xbox's single guest CPU.
+ * Host worker threads can append the same node while the consumer is between
+ * unlinking and clearing it, producing head->head and trapping the original
+ * unbounded list walk forever.  Preserve the original append behavior while
+ * rejecting duplicate nodes and repairing that observed one-node cycle. */
+void sub_000E4540(void)
+{
+    uint32_t node = g_ecx;
+    uint32_t head = MEM32(0x002FEBB8u);
+    uint32_t current;
+    uint32_t walks;
+
+    if (!node) {
+        g_esp += 4;
+        return;
+    }
+
+    MEM32(node + 0x0Cu) = 0;
+    if (!head) {
+        MEM32(0x002FEBB8u) = node;
+        g_esp += 4;
+        return;
+    }
+
+    current = head;
+    for (walks = 0; walks < 65536; walks++) {
+        uint32_t next;
+
+        if (current == node) {
+            if (MEM32(current) == current)
+                MEM32(current) = 0;
+            g_esp += 4;
+            return;
+        }
+        next = MEM32(current);
+        if (!next) {
+            MEM32(current) = node;
+            g_esp += 4;
+            return;
+        }
+        if (next == current) {
+            MEM32(current) = node;
+            g_esp += 4;
+            return;
+        }
+        current = next;
+    }
+
+    fprintf(stderr, "[THIRDAGE] completion queue has a multi-node cycle; "
+                    "dropping append of 0x%08X\n", node);
+    fflush(stderr);
+    g_esp += 4;
+}
 
 /* ── Register state (defined in xbox_memory_layout.c) ──────── */
 
@@ -94,7 +149,7 @@ recomp_func_t recomp_lookup_manual(uint32_t xbox_va)
      * if (xbox_va == 0x000ABCDE) return fixed_sub_000ABCDE;
      */
 
-    (void)xbox_va;
+    if (xbox_va == 0x000E4540u) return sub_000E4540;
     return (recomp_func_t)0;
 }
 
