@@ -138,10 +138,13 @@ and verified chapter reads advanced through offset `0x1B0000`.
 Path-attributed I/O tracing (`RECOMP_FILE_TRACE_PATHS=1`, together with
 `RECOMP_FILE_TRACE=1`) confirmed that the remaining pause is not another disc
 or path failure. `globscen.scx` is read completely, then valid selective 64 KiB
-reads begin in `e98c03.scx`. At the pause, completed chapter chunks remain in
-the title's four-slot handoff ring while there are no failed reads. The next
-bring-up target is therefore the higher-level scene parser/state transition
-that consumes those chunks, before further renderer work.
+reads begin in `e98c03.scx`. A state-gate trace then followed all three
+zero-based scene sections (`0/3`, `1/3`, and `2/3`) through the title's
+four-slot handoff ring. At the pause the final section reports complete, the
+ring and parsed-object queue are drained, and there are no failed reads. The
+scene package has therefore finished streaming and parsing. The next bring-up
+target is post-load scene activation and render submission, not file I/O or an
+additional scene packet.
 
 `RECOMP_GUEST_SAMPLE=<delay>,<duration>` enables the runtime's non-terminating
 guest-function sampler. It samples the main guest thread and registered worker
