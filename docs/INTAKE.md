@@ -135,6 +135,14 @@ which rejects duplicate nodes and repairs the observed self-cycle. Regenerated
 direct call sites route through the override. The infinite walk disappeared
 and verified chapter reads advanced through offset `0x1B0000`.
 
+Path-attributed I/O tracing (`RECOMP_FILE_TRACE_PATHS=1`, together with
+`RECOMP_FILE_TRACE=1`) confirmed that the remaining pause is not another disc
+or path failure. `globscen.scx` is read completely, then valid selective 64 KiB
+reads begin in `e98c03.scx`. At the pause, completed chapter chunks remain in
+the title's four-slot handoff ring while there are no failed reads. The next
+bring-up target is therefore the higher-level scene parser/state transition
+that consumes those chunks, before further renderer work.
+
 `RECOMP_GUEST_SAMPLE=<delay>,<duration>` enables the runtime's non-terminating
 guest-function sampler. It samples the main guest thread and registered worker
 threads, reports the hottest guest addresses after the requested wall-clock
