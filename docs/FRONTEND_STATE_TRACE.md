@@ -22,12 +22,30 @@ run. The diagnostic log is private and excluded from Git:
 
 `sub_0015EC70` is an external event adapter: it reads event and argument fields
 at message offsets `+8` and `+0xC`, calls the manager's slot `+0x60`, and writes
-the dispatch result to an optional output pointer at message `+0x10`. It is
-referenced from the image's static data near `0x0026F0BC`. It did not appear
-in the successful state-2 trace. The next investigation should identify the
-registration format around that data address and the producer expected to
-emit event 1. Trace resource-manager slot 0 used by state 3 and the resulting
-`+0xB0` value. Keep experimental changes out of generated sources in commits.
+the dispatch result to an optional output pointer at message `+0x10`. It did
+not appear in the successful state-2 trace. Static data at `0x0026F0B4` maps
+IDs `0xDAC` through `0xE0F` to this adapter. The lookup routine is
+`sub_000E8E70`; a second caller at `0x00189924` looks up an object's first
+word and invokes the mapped callback with that object. This is a range-based
+object callback table, not a direct event registration for the front-end.
+
+A separate fan-out at `sub_000E8510` walks 20 `(event ID, callback)` pairs at
+`0x0026F0D8` and invokes callbacks whose ID matches the message field `+8`
+(or whose ID is `0xFFFFFFFF`). The table has no direct entry for
+`sub_0015EC70`. The next investigation should trace the producer expected to
+emit state-2 event 1, including this fan-out's callers and the object callback
+path. Trace resource-manager slot 0 used by state 3 and the resulting `+0xB0`
+value. Keep experimental changes out of generated sources in commits.
+
+More specifically, event 1 enters `sub_0015ECB0`, invokes manager vtable
+`+0xA4` (`sub_000EAEA0`, setting flag `+0x12C4`), then reaches the current
+state handler through vtable `+0x68` (`sub_0001F590`). Event 0 takes the same
+state-handler path without that extra action. A nested resource callback
+`sub_001EAB00` can send event `0x12` to the manager, but `0x12` maps to the
+dispatcher no-op branch; its later object-ID `0xDAC` callback is a distinct
+path. Thus this callback is not yet evidence of the missing event 1. The
+next live trace should instrument the source of event 1, not force the state
+handler directly.
 
 The game scene files `Data/Game/e98c/e98c03.scx` and `.sas` exist in the local
 dump; the private dump must not be committed. Game runs for investigation
