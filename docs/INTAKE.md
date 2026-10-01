@@ -164,6 +164,12 @@ indicator in the lower-right corner (about 1,400 non-black pixels). Scanout,
 continues at the game-state transition which should replace that loading frame
 with the full scene.
 
+The framebuffer window must still blit after a synchronous latch. An early
+version correctly refreshed the converted pixel buffer but skipped the window
+copy whenever the latch flag was set, leaving the visible client area frozen
+on its initial black frame. The window now skips only the redundant guest-RAM
+conversion and always paints the most recently latched frame.
+
 `RECOMP_GUEST_SAMPLE=<delay>,<duration>` enables the runtime's non-terminating
 guest-function sampler. It samples the main guest thread and registered worker
 threads, reports the hottest guest addresses after the requested wall-clock
