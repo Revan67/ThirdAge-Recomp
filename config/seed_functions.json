@@ -1,7 +1,15 @@
 [
  {
+  "start": "0x00016E60",
+  "note": "Final startup-queue callback observed in xemu and unresolved in the recomp; independent entry after padding, tail-calls 0x001F2FB0 with adjusted context."
+ },
+ {
   "start": "0x0007E434",
-  "note": "Indirect-call target observed at runtime; decodes as a function body."
+  "note": "Observed indirect target; verified internal memmove arm, not an independent function. Shared CFG recovery folds this weak seed into 0x0007E190."
+ },
+ {
+  "start": "0x000DB620",
+  "note": "Runtime-observed indirect stream-service callback, stored at object +0x78 by 0x000DB7C3. Ghidra confirms an independent entry; the longer title-package trace reached it unresolved."
  },
  {
   "start": "0x001051E0",

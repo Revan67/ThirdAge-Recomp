@@ -8,6 +8,8 @@ extracted/
 
 # Generated recompilation and analysis output
 build/
+build-file-completion/
+build-frame-clock/
 generated/
 src/recomp/
 analysis/generated/

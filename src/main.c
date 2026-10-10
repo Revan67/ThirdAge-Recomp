@@ -173,6 +173,8 @@ static void print_guest_context(void *rip)
  * the include path. */
 typedef struct MCPXAPUState MCPXAPUState;
 extern MCPXAPUState *mcpx_apu_init_standalone(uint8_t *ram_ptr);
+extern int mcpx_apu_irq_pending(void *opaque);
+extern void mcpx_apu_set_voice_memory(MCPXAPUState *, uint8_t *, size_t);
 extern MCPXAPUState *g_apu_state;
 extern bool apu_hook_handle_mmio(PCONTEXT ctx, uintptr_t fault_addr,
                                  uint32_t fault_xbox_va, int is_write);
@@ -229,6 +231,17 @@ static LONG CALLBACK veh_handler(PEXCEPTION_POINTERS ep)
             g_ebx, g_esi, g_edi);
         fprintf(stderr, "  Xbox VA of fault: 0x%08X\n",
             (uint32_t)(fault_addr - (uintptr_t)g_xbox_mem_offset));
+        uintptr_t module_base = (uintptr_t)GetModuleHandleW(NULL);
+        fprintf(stderr, "  Native module base=0x%llX RIP RVA=0x%llX thread=%lu\n",
+            (unsigned long long)module_base,
+            (unsigned long long)(ep->ContextRecord->Rip - module_base),
+            (unsigned long)GetCurrentThreadId());
+        fprintf(stderr, "  Native regs: rax=%llX rcx=%llX rdx=%llX r8=%llX r9=%llX\n",
+            (unsigned long long)ep->ContextRecord->Rax,
+            (unsigned long long)ep->ContextRecord->Rcx,
+            (unsigned long long)ep->ContextRecord->Rdx,
+            (unsigned long long)ep->ContextRecord->R8,
+            (unsigned long long)ep->ContextRecord->R9);
         print_guest_context((void *)ep->ContextRecord->Rip);
 
         /*
@@ -247,9 +260,22 @@ static LONG CALLBACK veh_handler(PEXCEPTION_POINTERS ep)
         {
             uintptr_t *sp = (uintptr_t *)ep->ContextRecord->Rsp;
             fprintf(stderr, "  Native stack (first 8 return addrs):\n");
-            for (int i = 0; i < 64 && sp[i]; i++) {
-                if (sp[i] >= 0x140000000ULL && sp[i] < 0x150000000ULL) {
-                    fprintf(stderr, "    [%d] 0x%llX\n", i, (unsigned long long)sp[i]);
+            const IMAGE_DOS_HEADER *dos = (const IMAGE_DOS_HEADER *)module_base;
+            const IMAGE_NT_HEADERS *nt = (const IMAGE_NT_HEADERS *)(module_base + dos->e_lfanew);
+            MEMORY_BASIC_INFORMATION stack_region;
+            size_t slots = 0;
+            if (VirtualQuery(sp, &stack_region, sizeof(stack_region)) &&
+                stack_region.State == MEM_COMMIT &&
+                !(stack_region.Protect & (PAGE_GUARD | PAGE_NOACCESS))) {
+                slots = ((uintptr_t)stack_region.BaseAddress + stack_region.RegionSize
+                         - (uintptr_t)sp) / sizeof(*sp);
+                if (slots > 64) slots = 64;
+            }
+            /* Stack candidates, not an unwind; tolerate ASLR and zero slots. */
+            for (size_t i = 0; i < slots; i++) {
+                if (sp[i] >= module_base && sp[i] < module_base + nt->OptionalHeader.SizeOfImage) {
+                    fprintf(stderr, "    [%zu] RVA 0x%llX\n", i,
+                        (unsigned long long)(sp[i] - module_base));
                 }
             }
         }
@@ -347,11 +373,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     g_xbox_mem_offset = xbox_GetMemoryOffset();
     printf("Xbox memory mapped. Offset: 0x%llX\n", (unsigned long long)g_xbox_mem_offset);
 
-    /* Xbox D3D keeps a five-bit PGRAPH cache reference in a GPU-owned word
-     * reached through the device at 0x00238938. The title deliberately poisons
-     * that word after setup and waits for NV2A to replace it with the reference
-     * exposed in PATT_COLOR0. */
-    xbox_Nv2aMirrorPatternReference(0x00238938u, 0x30u);
+    /* D3D's completion word is owned by the GPU semaphore command. Do not
+     * reconstruct it from PATT_COLOR0: that loses full counter wraps and
+     * competes with the command-driven writer. */
 
     /* Open the diagnostic presentation window immediately.  The generic
      * push-buffer executor also starts it after recognizing a color surface,
@@ -367,6 +391,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
      * base. */
     if (getenv("RECOMP_AC97_READY")) {
         g_apu_state = mcpx_apu_init_standalone((uint8_t *)xbox_GetMemoryBase());
+        if (g_apu_state) {
+            size_t voice_bank_size = 0;
+            uint8_t *voice_bank = xbox_GetContiguousMemoryBase(&voice_bank_size);
+            mcpx_apu_set_voice_memory(g_apu_state, voice_bank, voice_bank_size);
+            xbox_RegisterInterruptSource(5, mcpx_apu_irq_pending, g_apu_state);
+        }
         fprintf(stderr, "[BOOT] emulated APU %s\n",
                 g_apu_state ? "up" : "FAILED to initialise");
     }

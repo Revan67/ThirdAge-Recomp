@@ -1,5 +1,10 @@
 # Intake notes
 
+These are historical intake/bring-up notes. The current local build reaches
+the textured main menu with audible movie/menu audio; gameplay is unverified.
+See [current status](STATUS.md) and the latest [front-end trace](FRONTEND_STATE_TRACE.md).
+Older black-screen and scene-handoff boundaries below describe earlier builds.
+
 ## Disc filesystem
 
 The verified disc contains 146 files totaling 4,069,003,712 bytes. Its root is
